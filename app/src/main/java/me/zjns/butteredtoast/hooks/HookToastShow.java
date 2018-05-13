@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import me.zjns.butteredtoast.Util;
 
@@ -43,41 +42,28 @@ public class HookToastShow extends XC_MethodHook implements AutoHookable {
         CharSequence delimiter = Util.isUseChinese() ? "：" : ": ";
 
         Toast t = (Toast) param.thisObject;
-        try {
-            View view = t.getView();
-            Context context = view.getContext();
-            PackageManager pm = context.getPackageManager();
-            ApplicationInfo info = context.getApplicationInfo();
-            String appName = pm.getApplicationLabel(info).toString();
-            List<TextView> list = new ArrayList<>();
-            if (view instanceof TextView) {
-                TextView textView = (TextView) view;
-                list.add(textView);
-                if (textView.getText().toString().startsWith(appName)) {
-                    return;
-                }
-                //XposedBridge.log("[ButteredToast]TextView is toast view");
-                textView.setText(new SpannableStringBuilder(appName)
-                        .append(delimiter)
-                        .append(textView.getText())
-                );
-                return;
-            } else if (view instanceof ViewGroup) {
-                Util.findAllTextView(list, (ViewGroup) view);
-            }
-            if (list.size() != 1) {
-                throw new RuntimeException("number of TextViews in toast is not 1");
-            }
-            TextView text = list.get(0);
-            if (text.getText().toString().startsWith(appName)) {
-                return;
-            }
-            text.setText(new SpannableStringBuilder(appName)
-                    .append(delimiter)
-                    .append(text.getText()));
-        } catch (RuntimeException e) {
-            XposedBridge.log(e);
+        View view = t.getView();
+        Context context = view.getContext();
+        PackageManager pm = context.getPackageManager();
+        ApplicationInfo info = context.getApplicationInfo();
+        String appName = pm.getApplicationLabel(info).toString();
+        List<TextView> list = new ArrayList<>();
+        if (view instanceof TextView) {
+            TextView textView = (TextView) view;
+            list.add(textView);
+        } else if (view instanceof ViewGroup) {
+            Util.findAllTextView(list, (ViewGroup) view);
         }
+        if (list.size() != 1) {
+            return;
+        }
+        TextView text = list.get(0);
+        if (text.getText().toString().startsWith(appName)) {
+            return;
+        }
+        text.setText(new SpannableStringBuilder(appName)
+                .append(delimiter)
+                .append(text.getText()));
     }
 
     @Override
